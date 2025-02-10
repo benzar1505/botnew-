@@ -2,11 +2,25 @@ import logging
 import asyncio
 import os
 import signal
+import threading
 from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
-from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
+from flask import Flask
+
+# Flask app для keep_alive
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "OK"
+
+def run_flask():
+    app.run(host="0.0.0.0", port=8080)
+
+# Запуск Flask у окремому потоці
+threading.Thread(target=run_flask).start()
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -149,6 +163,5 @@ async def main():
 
 # Запуск бота
 if __name__ == "__main__":
-    keep_alive()  # Підтримка роботи Heroku
     signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
     asyncio.run(main())
