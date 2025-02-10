@@ -1,1 +1,1 @@
-worker: gunicorn main.py
+worker: phyton main.py
