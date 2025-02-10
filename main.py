@@ -138,8 +138,8 @@ dp.include_router(router)
 # Функція для обробки сигналу завершення
 async def handle_exit(*args):
     logging.warning("Бот вимикається...")
-    await bot.session.close()
-    await asyncio.sleep(5)
+    await bot.session.close()  # Закриваємо сесію
+    await asyncio.sleep(10)  # Збільшена затримка перед завершенням
     logging.warning("Бот вимкнено.")
 
 # Функція запуску бота
@@ -150,5 +150,5 @@ async def main():
 # Запуск бота
 if __name__ == "__main__":
     keep_alive()  # Підтримка роботи Heroku
-    signal.signal(signal.SIGTERM, lambda *args: asyncio.create_task(handle_exit(*args)))  # Обробка завершення
+    signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
     asyncio.run(main())
