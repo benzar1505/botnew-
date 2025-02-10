@@ -1,6 +1,7 @@
 import logging
 import asyncio
 import os
+import signal
 from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -133,6 +134,17 @@ async def service_full_selection(message: types.Message):
 
 # Підключаємо Router до Dispatcher
 dp.include_router(router)
+
+# Обробка команди SIGTERM для стабільної роботи Heroku
+async def shutdown():
+    logging.warning("Бот вимикається...")
+    await bot.session.close()
+    logging.warning("Бот вимкнено.")
+
+def handle_exit(*args):
+    asyncio.create_task(shutdown())
+
+signal.signal(signal.SIGTERM, handle_exit)
 
 # Функція запуску бота
 async def main():
