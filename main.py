@@ -1,17 +1,17 @@
 import logging
+import asyncio
 import os
-from aiogram import Bot, Dispatcher, types, Router, F
+from aiogram import Bot, Dispatcher, types, Router
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import Command
-from keep_alive import keep_alive  # Для підтримки сервера на Heroku
-import asyncio
-import signal
+from aiogram.filters import Command, Text
+from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-if not API_TOKEN:
-    raise ValueError("❌ API_TOKEN не знайдено! Додайте токен у змінні середовища.")
+ADMIN_ID = os.getenv("ADMIN_ID")  # Ваш Telegram ID для отримання заявок
+if not API_TOKEN or not ADMIN_ID:
+    raise ValueError("❌ API_TOKEN або ADMIN_ID не знайдено! Додайте їх у змінні середовища.")
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
@@ -32,18 +32,6 @@ main_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# Підменю послуг
-services_menu = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="🚗 Разовий огляд авто")],
-        [KeyboardButton(text="🎯 Експерт на день")],
-        [KeyboardButton(text="🏪 Супровід на авторинку")],
-        [KeyboardButton(text="🔑 Підбір авто 'Під ключ'")],
-        [KeyboardButton(text="🔙 Назад")],
-    ],
-    resize_keyboard=True
-)
-
 # Команда /start
 @router.message(Command("start"))
 async def send_welcome(message: types.Message):
@@ -53,41 +41,92 @@ async def send_welcome(message: types.Message):
         reply_markup=main_menu
     )
 
-# Відкриття підменю послуг
-@router.message(F.text == "📋 Послуги")
-async def show_services_menu(message: types.Message):
-    await message.answer("🛠 Оберіть послугу:", reply_markup=services_menu)
+# Послуги
+@router.message(Text(equals="📋 Послуги"))
+async def show_services(message: types.Message):
+    await message.answer(
+        "🛠 <b>Наші послуги:</b>\n\n"
+        "🔹 Разовий огляд авто\n"
+        "🔹 Підбір авто 'під ключ'\n"
+        "🔹 Експерт на день\n"
+        "🔹 Супровід на авторинку\n"
+        "🔹 Перевірка документів\n"
+        "🔹 Перевірка на СТО\n"
+        "🔹 Фото/відео звіт"
+    )
 
-# Назад до головного меню
-@router.message(F.text == "🔙 Назад")
-async def go_back(message: types.Message):
-    await message.answer("🔙 Ви повернулись у головне меню.", reply_markup=main_menu)
+# Заявка
+@router.message(Text(equals="✍️ Залишити заявку"))
+async def send_request_info(message: types.Message):
+    await message.answer(
+        "📩 Для оформлення заявки на наші послуги, будь ласка, надайте наступну інформацію:\n"
+        "1️⃣ Ваше ім'я\n"
+        "2️⃣ Номер телефону\n"
+        "3️⃣ Опис вашої заявки або питання"
+    )
+    # Очікуємо отримання даних від користувача
+    await message.answer("Введіть ваше ім'я:")
 
-# Реалізація послуг
-@router.message(F.text == "🚗 Разовий огляд авто")
-async def service_one_time_check(message: types.Message):
-    await message.answer("🚗 <b>РАЗОВИЙ ОГЛЯД АВТО – 1500₴</b>\n\n...")
+# Обробка зворотного зв'язку (ім'я, телефон, опис)
+user_data = {}
 
-@router.message(F.text == "🎯 Експерт на день")
-async def service_expert_day(message: types.Message):
-    await message.answer("🎯 <b>ЕКСПЕРТ НА ДЕНЬ – 4000₴</b>\n\n...")
+@router.message(Text)
+async def handle_response(message: types.Message):
+    user_id = message.from_user.id
+    if user_id not in user_data:
+        # Зберігаємо ім'я користувача
+        user_data[user_id] = {"name": message.text}
+        await message.answer("Тепер введіть ваш номер телефону:")
+    elif "phone" not in user_data[user_id]:
+        # Зберігаємо телефон
+        user_data[user_id]["phone"] = message.text
+        await message.answer("Останній крок! Напишіть опис вашої заявки або питання:")
+    else:
+        # Зберігаємо опис заявки
+        user_data[user_id]["message"] = message.text
+        # Відправляємо заявку вам на Telegram
+        await bot.send_message(
+            ADMIN_ID, 
+            f"📩 Нова заявка від {user_data[user_id]['name']}:\n"
+            f"📞 Телефон: {user_data[user_id]['phone']}\n"
+            f"📋 Опис: {user_data[user_id]['message']}"
+        )
+        await message.answer("🙏 Дякуємо за вашу заявку! Ми зв'яжемося з вами найближчим часом.")
+        # Очищаємо збережені дані
+        del user_data[user_id]
+
+# Контакти
+@router.message(Text(equals="📞 Контакти"))
+async def send_contacts(message: types.Message):
+    await message.answer(
+        "📞 <b>Контакти:</b>\n"
+        "📲 Телефон: +380 (73) 933 77 97\n"
+        "📍 Київ\n\n"
+        "🔹 <a href='https://t.me/autoscout_kyiv'>Telegram</a>\n"
+        "🔹 <a href='https://instagram.com/autoscout_kyiv'>Instagram</a>\n"
+        "🔹 <a href='https://autoscout.neocities.org/'>Наш сайт</a>"
+    )
+
+# Допомога
+@router.message(Text(equals="❓ Допомога"))
+async def send_help(message: types.Message):
+    await message.answer(
+        "❓ <b>Доступні команди:</b>\n"
+        "📋 Послуги — переглянути наші послуги\n"
+        "✍️ Залишити заявку — як зробити замовлення\n"
+        "📞 Контакти — телефон, Telegram, Instagram, сайт\n"
+        "Якщо у вас є питання, звертайтеся!"
+    )
 
 # Підключаємо Router до Dispatcher
 dp.include_router(router)
-
-# Функція для обробки сигналу завершення
-def handle_exit(*args):
-    logging.warning("Бот вимикається...")
-    asyncio.create_task(bot.session.close())
-    asyncio.sleep(5)
-    logging.warning("Бот вимкнено.")
 
 # Функція запуску бота
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
+# Запуск бота
 if __name__ == "__main__":
-    keep_alive()  # Підтримка роботи на Heroku
-    signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
+    keep_alive()  # Підтримка роботи Heroku
     asyncio.run(main())
