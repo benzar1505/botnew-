@@ -135,17 +135,6 @@ async def service_full_selection(message: types.Message):
 # Підключаємо Router до Dispatcher
 dp.include_router(router)
 
-# Обробка команди SIGTERM для стабільної роботи Heroku
-async def shutdown():
-    logging.warning("Бот вимикається...")
-    await bot.session.close()
-    logging.warning("Бот вимкнено.")
-
-def handle_exit(*args):
-    asyncio.create_task(shutdown())
-
-signal.signal(signal.SIGTERM, handle_exit)
-
 # Функція запуску бота
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
@@ -154,4 +143,5 @@ async def main():
 # Запуск бота
 if __name__ == "__main__":
     keep_alive()  # Підтримка роботи Heroku
+    signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
     asyncio.run(main())
