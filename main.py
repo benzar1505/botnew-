@@ -135,6 +135,13 @@ async def service_full_selection(message: types.Message):
 # Підключаємо Router до Dispatcher
 dp.include_router(router)
 
+# Функція для обробки сигналу завершення
+def handle_exit(*args):
+    logging.warning("Бот вимикається...")
+    asyncio.create_task(bot.session.close())
+    asyncio.sleep(5)
+    logging.warning("Бот вимкнено.")
+
 # Функція запуску бота
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
