@@ -6,6 +6,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
+from aiogram import F
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
