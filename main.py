@@ -2,7 +2,6 @@ import logging
 import asyncio
 import os
 from aiogram import Bot, Dispatcher, types, Router
-from aiogram.client import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command, Text
@@ -17,7 +16,7 @@ if not API_TOKEN:
 logging.basicConfig(level=logging.INFO)
 
 # Ініціалізація бота та диспетчера
-bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
 # Створюємо Router
@@ -38,7 +37,8 @@ async def send_welcome(message: types.Message):
     await message.answer(
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти ідеальне авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
-        reply_markup=main_menu
+        reply_markup=main_menu,
+        parse_mode=ParseMode.HTML
     )
 
 # Послуги
@@ -52,14 +52,16 @@ async def show_services(message: types.Message):
         "🔹 Супровід на авторинку\n"
         "🔹 Перевірка документів\n"
         "🔹 Перевірка на СТО\n"
-        "🔹 Фото/відео звіт"
+        "🔹 Фото/відео звіт",
+        parse_mode=ParseMode.HTML
     )
 
 # Заявка
 @router.message(Text("✍️ Залишити заявку"))
 async def send_request_info(message: types.Message):
     await message.answer(
-        "📩 Для оформлення заявки напишіть нам у <a href='https://t.me/autoscout_kyiv'>Telegram</a> або зателефонуйте."
+        "📩 Для оформлення заявки напишіть нам у <a href='https://t.me/autoscout_kyiv'>Telegram</a> або зателефонуйте.",
+        parse_mode=ParseMode.HTML
     )
 
 # Контакти
@@ -71,7 +73,8 @@ async def send_contacts(message: types.Message):
         "📍 Київ\n\n"
         "🔹 <a href='https://t.me/autoscout_kyiv'>Telegram</a>\n"
         "🔹 <a href='https://instagram.com/autoscout_kyiv'>Instagram</a>\n"
-        "🔹 <a href='https://autoscout.neocities.org/'>Наш сайт</a>"
+        "🔹 <a href='https://autoscout.neocities.org/'>Наш сайт</a>",
+        parse_mode=ParseMode.HTML
     )
 
 # Допомога
@@ -82,7 +85,8 @@ async def send_help(message: types.Message):
         "📋 Послуги — переглянути наші послуги\n"
         "✍️ Залишити заявку — як зробити замовлення\n"
         "📞 Контакти — телефон, Telegram, Instagram, сайт\n"
-        "Якщо у вас є питання, звертайтеся!"
+        "Якщо у вас є питання, звертайтеся!",
+        parse_mode=ParseMode.HTML
     )
 
 # Підключаємо Router до Dispatcher
