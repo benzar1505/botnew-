@@ -4,14 +4,13 @@ import os
 from aiogram import Bot, Dispatcher, types, Router
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import Command, Text
+from aiogram.filters import Command
 from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-ADMIN_ID = os.getenv("ADMIN_ID")  # Ваш Telegram ID для отримання заявок
-if not API_TOKEN or not ADMIN_ID:
-    raise ValueError("❌ API_TOKEN або ADMIN_ID не знайдено! Додайте їх у змінні середовища.")
+if not API_TOKEN:
+    raise ValueError("❌ API_TOKEN не знайдено! Додайте токен у змінні середовища.")
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +41,7 @@ async def send_welcome(message: types.Message):
     )
 
 # Послуги
-@router.message(Text(equals="📋 Послуги"))
+@router.message(lambda message: message.text == "📋 Послуги")
 async def show_services(message: types.Message):
     await message.answer(
         "🛠 <b>Наші послуги:</b>\n\n"
@@ -56,47 +55,14 @@ async def show_services(message: types.Message):
     )
 
 # Заявка
-@router.message(Text(equals="✍️ Залишити заявку"))
+@router.message(lambda message: message.text == "✍️ Залишити заявку")
 async def send_request_info(message: types.Message):
     await message.answer(
-        "📩 Для оформлення заявки на наші послуги, будь ласка, надайте наступну інформацію:\n"
-        "1️⃣ Ваше ім'я\n"
-        "2️⃣ Номер телефону\n"
-        "3️⃣ Опис вашої заявки або питання"
+        "📩 Для оформлення заявки напишіть нам у <a href='https://t.me/autoscout_kyiv'>Telegram</a> або зателефонуйте."
     )
-    # Очікуємо отримання даних від користувача
-    await message.answer("Введіть ваше ім'я:")
-
-# Обробка зворотного зв'язку (ім'я, телефон, опис)
-user_data = {}
-
-@router.message(Text)
-async def handle_response(message: types.Message):
-    user_id = message.from_user.id
-    if user_id not in user_data:
-        # Зберігаємо ім'я користувача
-        user_data[user_id] = {"name": message.text}
-        await message.answer("Тепер введіть ваш номер телефону:")
-    elif "phone" not in user_data[user_id]:
-        # Зберігаємо телефон
-        user_data[user_id]["phone"] = message.text
-        await message.answer("Останній крок! Напишіть опис вашої заявки або питання:")
-    else:
-        # Зберігаємо опис заявки
-        user_data[user_id]["message"] = message.text
-        # Відправляємо заявку вам на Telegram
-        await bot.send_message(
-            ADMIN_ID, 
-            f"📩 Нова заявка від {user_data[user_id]['name']}:\n"
-            f"📞 Телефон: {user_data[user_id]['phone']}\n"
-            f"📋 Опис: {user_data[user_id]['message']}"
-        )
-        await message.answer("🙏 Дякуємо за вашу заявку! Ми зв'яжемося з вами найближчим часом.")
-        # Очищаємо збережені дані
-        del user_data[user_id]
 
 # Контакти
-@router.message(Text(equals="📞 Контакти"))
+@router.message(lambda message: message.text == "📞 Контакти")
 async def send_contacts(message: types.Message):
     await message.answer(
         "📞 <b>Контакти:</b>\n"
@@ -108,7 +74,7 @@ async def send_contacts(message: types.Message):
     )
 
 # Допомога
-@router.message(Text(equals="❓ Допомога"))
+@router.message(lambda message: message.text == "❓ Допомога")
 async def send_help(message: types.Message):
     await message.answer(
         "❓ <b>Доступні команди:</b>\n"
