@@ -1,12 +1,12 @@
 import logging
-import asyncio
 import os
-import signal
 from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 from keep_alive import keep_alive  # Для підтримки сервера на Heroku
+import asyncio
+import signal
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
