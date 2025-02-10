@@ -90,4 +90,4 @@ async def main():
 if __name__ == "__main__":
     keep_alive()  # Підтримка роботи на Heroku
     signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
-    asyncio.run(main()
+    asyncio.run(main())
