@@ -136,10 +136,10 @@ async def service_full_selection(message: types.Message):
 dp.include_router(router)
 
 # Функція для обробки сигналу завершення
-def handle_exit(*args):
+async def handle_exit(*args):
     logging.warning("Бот вимикається...")
-    asyncio.create_task(bot.session.close())
-    asyncio.sleep(5)
+    await bot.session.close()
+    await asyncio.sleep(5)
     logging.warning("Бот вимкнено.")
 
 # Функція запуску бота
@@ -150,5 +150,5 @@ async def main():
 # Запуск бота
 if __name__ == "__main__":
     keep_alive()  # Підтримка роботи Heroku
-    signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
+    signal.signal(signal.SIGTERM, lambda *args: asyncio.create_task(handle_exit(*args)))  # Обробка завершення
     asyncio.run(main())
