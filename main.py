@@ -2,9 +2,10 @@ import logging
 import asyncio
 import os
 from aiogram import Bot, Dispatcher, types, Router
+from aiogram.client import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.filters import Command
+from aiogram.filters import Command, Text
 from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
@@ -16,7 +17,7 @@ if not API_TOKEN:
 logging.basicConfig(level=logging.INFO)
 
 # Ініціалізація бота та диспетчера
-bot = Bot(token=API_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
 
 # Створюємо Router
@@ -41,7 +42,7 @@ async def send_welcome(message: types.Message):
     )
 
 # Послуги
-@router.message(lambda message: message.text == "📋 Послуги")
+@router.message(Text("📋 Послуги"))
 async def show_services(message: types.Message):
     await message.answer(
         "🛠 <b>Наші послуги:</b>\n\n"
@@ -55,14 +56,14 @@ async def show_services(message: types.Message):
     )
 
 # Заявка
-@router.message(lambda message: message.text == "✍️ Залишити заявку")
+@router.message(Text("✍️ Залишити заявку"))
 async def send_request_info(message: types.Message):
     await message.answer(
         "📩 Для оформлення заявки напишіть нам у <a href='https://t.me/autoscout_kyiv'>Telegram</a> або зателефонуйте."
     )
 
 # Контакти
-@router.message(lambda message: message.text == "📞 Контакти")
+@router.message(Text("📞 Контакти"))
 async def send_contacts(message: types.Message):
     await message.answer(
         "📞 <b>Контакти:</b>\n"
@@ -74,7 +75,7 @@ async def send_contacts(message: types.Message):
     )
 
 # Допомога
-@router.message(lambda message: message.text == "❓ Допомога")
+@router.message(Text("❓ Допомога"))
 async def send_help(message: types.Message):
     await message.answer(
         "❓ <b>Доступні команди:</b>\n"
