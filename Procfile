@@ -1,1 +1,1 @@
-worker: phyton main.py
+worker: python main.py
