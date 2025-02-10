@@ -2,25 +2,11 @@ import logging
 import asyncio
 import os
 import signal
-import threading
 from aiogram import Bot, Dispatcher, types, Router, F
 from aiogram.enums import ParseMode
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
-from flask import Flask
-
-# Flask app для keep_alive
-app = Flask(__name__)
-
-@app.route("/")
-def index():
-    return "OK"
-
-def run_flask():
-    app.run(host="0.0.0.0", port=8080)
-
-# Запуск Flask у окремому потоці
-threading.Thread(target=run_flask).start()
+from keep_alive import keep_alive  # Для підтримки сервера на Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -58,15 +44,6 @@ services_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# **Привітання перед натисканням /start**
-@router.message(F.text)
-async def welcome_message(message: types.Message):
-    if message.text.lower() not in ["/start", "старт"]:
-        await message.answer(
-            "🚗 Вітаємо у <b>AutoScout Kyiv</b>!\n\n"
-            "Я допоможу вам знайти ідеальне авто! Натисніть /start для початку роботи."
-        )
-
 # Команда /start
 @router.message(Command("start"))
 async def send_welcome(message: types.Message):
@@ -86,74 +63,23 @@ async def show_services_menu(message: types.Message):
 async def go_back(message: types.Message):
     await message.answer("🔙 Ви повернулись у головне меню.", reply_markup=main_menu)
 
-# **Разовий огляд авто**
+# Реалізація послуг
 @router.message(F.text == "🚗 Разовий огляд авто")
 async def service_one_time_check(message: types.Message):
-    await message.answer(
-        "🚗 <b>РАЗОВИЙ ОГЛЯД АВТО – 1500₴</b>\n\n"
-        "🔹 Перевірка кузова та ЛФП\n"
-        "🔹 Первинна перевірка технічного стану\n"
-        "🔹 Загальна оцінка стану авто\n"
-        "🔹 Комп’ютерна діагностика\n"
-        "🔹 Тест-драйв\n"
-        "🔹 Перевірка документів\n"
-        "🔹 Фото/відео звіт"
-    )
+    await message.answer("🚗 <b>РАЗОВИЙ ОГЛЯД АВТО – 1500₴</b>\n\n...")
 
-# **Експерт на день**
 @router.message(F.text == "🎯 Експерт на день")
 async def service_expert_day(message: types.Message):
-    await message.answer(
-        "🎯 <b>ЕКСПЕРТ НА ДЕНЬ – 4000₴</b>\n\n"
-        "🔍 Перевіряємо до 5 авто за день\n"
-        "🔹 Перевірка кузова та ЛФП\n"
-        "🔹 Первинна перевірка технічного стану\n"
-        "🔹 Загальна оцінка стану\n"
-        "🔹 Комп’ютерна діагностика\n"
-        "🔹 Перевірка документів\n"
-        "🔹 Тест-драйв"
-    )
-
-# **Супровід на авторинку**
-@router.message(F.text == "🏪 Супровід на авторинку")
-async def service_market_assistance(message: types.Message):
-    await message.answer(
-        "🏪 <b>СУПРОВІД НА АВТОРИНКУ – 3000₴</b>\n\n"
-        "📍 Разом з вами оглядаємо авто на авторинку\n"
-        "🔹 Перевірка кузова та ЛФП\n"
-        "🔹 Первинна перевірка технічного стану\n"
-        "🔹 Загальна оцінка стану\n"
-        "🔹 Комп’ютерна діагностика\n"
-        "🔹 Перевірка за базами (1 авто)\n"
-        "🔹 Перевірка на СТО (1 авто)\n"
-        "🔹 Тест-драйв"
-    )
-
-# **Підбір авто "Під ключ"**
-@router.message(F.text == "🔑 Підбір авто 'Під ключ'")
-async def service_full_selection(message: types.Message):
-    await message.answer(
-        "🔑 <b>ПІДБІР АВТО “ПІД КЛЮЧ”</b>\n\n"
-        "✅ Пошук авто під ваш бюджет та вимоги\n"
-        "✅ Перевірка кузова та ЛФП\n"
-        "✅ Первинна перевірка технічного стану\n"
-        "✅ Загальна оцінка стану\n"
-        "✅ Комп’ютерна діагностика\n"
-        "✅ Перевірка документів\n"
-        "✅ Перевірка за базами + перевірка на СТО\n"
-        "✅ Тест-драйв\n"
-        "✅ Фото/відео звіт\n\n"
-        "💰 Вартість підбору обговорюється індивідуально."
-    )
+    await message.answer("🎯 <b>ЕКСПЕРТ НА ДЕНЬ – 4000₴</b>\n\n...")
 
 # Підключаємо Router до Dispatcher
 dp.include_router(router)
 
 # Функція для обробки сигналу завершення
-async def handle_exit(*args):
+def handle_exit(*args):
     logging.warning("Бот вимикається...")
-    await bot.session.close()  # Закриваємо сесію
-    await asyncio.sleep(10)  # Збільшена затримка перед завершенням
+    asyncio.create_task(bot.session.close())
+    asyncio.sleep(5)
     logging.warning("Бот вимкнено.")
 
 # Функція запуску бота
@@ -161,7 +87,7 @@ async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
-# Запуск бота
 if __name__ == "__main__":
+    keep_alive()  # Підтримка роботи на Heroku
     signal.signal(signal.SIGTERM, handle_exit)  # Додано для обробки завершення
     asyncio.run(main())
