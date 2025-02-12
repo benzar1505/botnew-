@@ -101,3 +101,8 @@ async def main():
 if __name__ == "__main__":
     keep_alive()  # Підтримка роботи Heroku
     asyncio.run(main())
+    import os
+
+if __name__ == "__main__":
+    PORT = int(os.environ.get("PORT", 5000))  # Використовуємо Heroku PORT або 5000 за замовчуванням
+    app.run(host="0.0.0.0", port=PORT)
