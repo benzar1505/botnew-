@@ -1,6 +1,6 @@
 import logging
-import asyncio
 import os
+import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
 from aiogram.filters import Command
@@ -11,14 +11,11 @@ API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not API_TOKEN:
     raise ValueError("❌ API_TOKEN не знайдено! Додайте токен у змінні середовища.")
 
-# Налаштування логування
-logging.basicConfig(level=logging.INFO)
-
 # Ініціалізація бота та диспетчера
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Створюємо головне меню
+# Головне меню
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="📋 Послуги"), KeyboardButton(text="✍️ Заповнити заявку")],
@@ -37,47 +34,7 @@ async def send_welcome(message: types.Message):
         parse_mode=ParseMode.HTML
     )
 
-# Послуги
-@dp.message_handler(lambda message: message.text == "📋 Послуги")
-async def show_services(message: types.Message):
-    await message.answer(
-        "🛠 <b>Наші послуги:</b>\n\n"
-        "🔹 Разовий огляд авто\n"
-        "🔹 Підбір авто 'під ключ'\n"
-        "🔹 Експерт на день\n"
-        "🔹 Супровід на авторинку\n"
-        "🔹 Перевірка документів\n"
-        "🔹 Перевірка на СТО\n"
-        "🔹 Фото/відео звіт",
-        parse_mode=ParseMode.HTML
-    )
-
-# Контакти
-@dp.message_handler(lambda message: message.text == "📞 Контакти")
-async def send_contacts(message: types.Message):
-    await message.answer(
-        "📞 <b>Контакти:</b>\n"
-        "📲 Телефон: +380 (73) 933 77 97\n"
-        "📍 Київ\n\n"
-        "🔹 <a href='https://t.me/autoscout_kyiv'>Telegram</a>\n"
-        "🔹 <a href='https://instagram.com/autoscout_kyiv'>Instagram</a>\n"
-        "🔹 <a href='https://autoscout.neocities.org/'>Наш сайт</a>",
-        parse_mode=ParseMode.HTML
-    )
-
-# Допомога
-@dp.message_handler(lambda message: message.text == "❓ Допомога")
-async def send_help(message: types.Message):
-    await message.answer(
-        "❓ <b>Доступні команди:</b>\n"
-        "📋 Послуги — переглянути наші послуги\n"
-        "✍️ Заповнити заявку — як зробити замовлення\n"
-        "📞 Контакти — телефон, Telegram, Instagram, сайт\n"
-        "Якщо у вас є питання, звертайтеся!",
-        parse_mode=ParseMode.HTML
-    )
-
-# Обробка webhook
+# Обробка Webhook
 async def handle_webhook(request):
     update = await request.json()
     await dp.feed_update(bot, update)
@@ -92,7 +49,7 @@ app = web.Application()
 app.router.add_post("/", handle_webhook)
 app.on_startup.append(on_startup)
 
-# Запуск
+# Запуск веб-сервера
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     web.run_app(app, host="0.0.0.0", port=port)
