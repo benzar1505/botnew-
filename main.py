@@ -5,7 +5,6 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
 from aiogram.filters import Command
 from aiohttp import web
-from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -53,19 +52,6 @@ async def show_services(message: types.Message):
         parse_mode=ParseMode.HTML
     )
 
-# Заявка
-@dp.message_handler(lambda message: message.text == "✍️ Заповнити заявку")
-async def fill_request(message: types.Message):
-    await message.answer(
-        "📩 Заповніть форму заявки, і ми з вами зв'яжемося найближчим часом!\n\n"
-        "❓ Ваше ім'я:\n"
-        "📞 Ваш номер телефону або Telegram акаунт:\n"
-        "🔹 Бажана послуга:\n"
-        "💬 Ваше питання:\n"
-        "Напишіть ці деталі, і ми обов'язково вам допоможемо.",
-        parse_mode=ParseMode.HTML
-    )
-
 # Контакти
 @dp.message_handler(lambda message: message.text == "📞 Контакти")
 async def send_contacts(message: types.Message):
@@ -91,25 +77,22 @@ async def send_help(message: types.Message):
         parse_mode=ParseMode.HTML
     )
 
-# Функція для налаштування webhook
-async def set_webhook():
-    url = "https://your-heroku-app-name.herokuapp.com/"  # Замість цього вставте ваш URL
-    await bot.set_webhook(url)
+# Обробка webhook
+async def handle_webhook(request):
+    update = await request.json()
+    await dp.feed_update(bot, update)
+    return web.Response(text="OK")
 
-# Обробка запитів по webhook
-async def on_start(request):
-    return web.Response(text="Bot is running")
+# Налаштування веб-сервера
+async def on_startup(app):
+    webhook_url = f"https://{os.getenv('HEROKU_APP_NAME')}.herokuapp.com/"
+    await bot.set_webhook(webhook_url)
 
-# Налаштовуємо веб-сервер
 app = web.Application()
-app.router.add_get("/", on_start)
+app.router.add_post("/", handle_webhook)
+app.on_startup.append(on_startup)
 
-# Запуск webhook і веб-сервера
-async def on_start():
-    await bot.set_webhook("https://your-heroku-app-name.herokuapp.com/")  # Замість цього вставте ваш URL
-    return web.Response(text="Bot is running")
-
-# Запуск веб-сервера
+# Запуск
 if __name__ == "__main__":
-    keep_alive()  # Підтримка роботи Heroku
-    web.run_app(app, port=os.getenv('PORT'))
+    port = int(os.environ.get("PORT", 5000))
+    web.run_app(app, host="0.0.0.0", port=port)
