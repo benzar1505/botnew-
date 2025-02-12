@@ -7,7 +7,6 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -154,5 +153,4 @@ async def main():
 
 # Запуск бота
 if __name__ == "__main__":
-    keep_alive()  # Підтримка роботи Heroku
     asyncio.run(main())
