@@ -6,6 +6,9 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
 from aiogram.filters import Command
 from aiohttp import web
 
+# Логування
+logging.basicConfig(level=logging.INFO)
+
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not API_TOKEN:
@@ -43,6 +46,7 @@ async def handle_webhook(request):
 # Налаштування веб-сервера
 async def on_startup(app):
     webhook_url = f"https://{os.getenv('HEROKU_APP_NAME')}.herokuapp.com/"
+    logging.info(f"Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
 app = web.Application()
@@ -52,4 +56,5 @@ app.on_startup.append(on_startup)
 # Запуск веб-сервера
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
+    logging.info(f"Запуск веб-сервера на порті {port}")
     web.run_app(app, host="0.0.0.0", port=port)
