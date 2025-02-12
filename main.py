@@ -1,20 +1,16 @@
 import logging
 import asyncio
 import os
-from aiogram import Bot, Dispatcher, types, Router, F
-from aiogram.enums import ParseMode
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
+from aiohttp import web
+from keep_alive import keep_alive  # Запуск Flask-сервера для Heroku
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 if not API_TOKEN:
     raise ValueError("❌ API_TOKEN не знайдено! Додайте токен у змінні середовища.")
-
-# ID адміна
-ADMIN_ID = 7858563425  
 
 # Налаштування логування
 logging.basicConfig(level=logging.INFO)
@@ -22,36 +18,28 @@ logging.basicConfig(level=logging.INFO)
 # Ініціалізація бота та диспетчера
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
-router = Router()
 
-# Створюємо меню
+# Створюємо головне меню
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="📋 Послуги"), KeyboardButton(text="📝 Заповнити заявку")],
+        [KeyboardButton(text="📋 Послуги"), KeyboardButton(text="✍️ Заповнити заявку")],
         [KeyboardButton(text="📞 Контакти"), KeyboardButton(text="❓ Допомога")],
     ],
     resize_keyboard=True
 )
 
-# Стан для заявки
-class RequestForm(StatesGroup):
-    name = State()
-    contact = State()
-    service = State()
-    question = State()
-
 # Команда /start
-@router.message(Command("start"))
+@dp.message_handler(Command("start"))
 async def send_welcome(message: types.Message):
     await message.answer(
-        "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти ідеальне авто!\n\n"
+        "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти ідеальне авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
         reply_markup=main_menu,
         parse_mode=ParseMode.HTML
     )
 
 # Послуги
-@router.message(F.text == "📋 Послуги")
+@dp.message_handler(lambda message: message.text == "📋 Послуги")
 async def show_services(message: types.Message):
     await message.answer(
         "🛠 <b>Наші послуги:</b>\n\n"
@@ -65,8 +53,21 @@ async def show_services(message: types.Message):
         parse_mode=ParseMode.HTML
     )
 
+# Заявка
+@dp.message_handler(lambda message: message.text == "✍️ Заповнити заявку")
+async def fill_request(message: types.Message):
+    await message.answer(
+        "📩 Заповніть форму заявки, і ми з вами зв'яжемося найближчим часом!\n\n"
+        "❓ Ваше ім'я:\n"
+        "📞 Ваш номер телефону або Telegram акаунт:\n"
+        "🔹 Бажана послуга:\n"
+        "💬 Ваше питання:\n"
+        "Напишіть ці деталі, і ми обов'язково вам допоможемо.",
+        parse_mode=ParseMode.HTML
+    )
+
 # Контакти
-@router.message(F.text == "📞 Контакти")
+@dp.message_handler(lambda message: message.text == "📞 Контакти")
 async def send_contacts(message: types.Message):
     await message.answer(
         "📞 <b>Контакти:</b>\n"
@@ -79,78 +80,36 @@ async def send_contacts(message: types.Message):
     )
 
 # Допомога
-@router.message(F.text == "❓ Допомога")
+@dp.message_handler(lambda message: message.text == "❓ Допомога")
 async def send_help(message: types.Message):
     await message.answer(
         "❓ <b>Доступні команди:</b>\n"
         "📋 Послуги — переглянути наші послуги\n"
-        "📝 Заповнити заявку — відправити заявку на підбір авто\n"
+        "✍️ Заповнити заявку — як зробити замовлення\n"
         "📞 Контакти — телефон, Telegram, Instagram, сайт\n"
         "Якщо у вас є питання, звертайтеся!",
         parse_mode=ParseMode.HTML
     )
 
-# --- Форма заявки ---
-@router.message(F.text == "📝 Заповнити заявку")
-async def request_start(message: types.Message, state: FSMContext):
-    await state.set_state(RequestForm.name)
-    await message.answer("📝 Введіть ваше ім'я:")
+# Функція для налаштування webhook
+async def set_webhook():
+    url = "https://your-heroku-app-name.herokuapp.com/"  # Замість цього вставте ваш URL
+    await bot.set_webhook(url)
 
-@router.message(RequestForm.name)
-async def request_name(message: types.Message, state: FSMContext):
-    await state.update_data(name=message.text)
-    await state.set_state(RequestForm.contact)
-    await message.answer("📞 Введіть ваш номер телефону або Telegram-нік:")
+# Обробка запитів по webhook
+async def on_start(request):
+    return web.Response(text="Bot is running")
 
-@router.message(RequestForm.contact)
-async def request_contact(message: types.Message, state: FSMContext):
-    await state.update_data(contact=message.text)
-    await state.set_state(RequestForm.service)
-    await message.answer("🔹 Оберіть послугу:\n\n"
-                         "1️⃣ Разовий огляд авто\n"
-                         "2️⃣ Підбір авто 'під ключ'\n"
-                         "3️⃣ Експерт на день\n"
-                         "4️⃣ Супровід на авторинку\n"
-                         "5️⃣ Перевірка документів\n"
-                         "6️⃣ Перевірка на СТО\n"
-                         "7️⃣ Фото/відео звіт\n\n"
-                         "Напишіть номер або назву послуги.")
+# Налаштовуємо веб-сервер
+app = web.Application()
+app.router.add_get("/", on_start)
 
-@router.message(RequestForm.service)
-async def request_service(message: types.Message, state: FSMContext):
-    await state.update_data(service=message.text)
-    await state.set_state(RequestForm.question)
-    await message.answer("❓ Введіть ваше питання або уточнення:")
+# Запуск webhook і веб-сервера
+async def on_start():
+    await bot.set_webhook("https://your-heroku-app-name.herokuapp.com/")  # Замість цього вставте ваш URL
+    return web.Response(text="Bot is running")
 
-@router.message(RequestForm.question)
-async def request_question(message: types.Message, state: FSMContext):
-    user_data = await state.get_data()
-    
-    # Формуємо текст заявки
-    request_text = (
-        f"📩 <b>Нова заявка:</b>\n\n"
-        f"👤 Ім'я: {user_data['name']}\n"
-        f"📞 Контакт: {user_data['contact']}\n"
-        f"🔹 Послуга: {user_data['service']}\n"
-        f"❓ Питання: {message.text}"
-    )
-    
-    # Надсилаємо адміну
-    await bot.send_message(ADMIN_ID, request_text, parse_mode=ParseMode.HTML)
-    
-    # Дякуємо користувачу
-    await message.answer("✅ Дякуємо! Ваша заявка відправлена, ми зв'яжемося з вами найближчим часом.")
-    
-    await state.clear()
-
-# Підключаємо Router до Dispatcher
-dp.include_router(router)
-
-# Функція запуску бота
-async def main():
-    await bot.delete_webhook(drop_pending_updates=True)
-    await dp.start_polling(bot)
-
-# Запуск бота
+# Запуск веб-сервера
 if __name__ == "__main__":
-    asyncio.run(main())
+    keep_alive()  # Підтримка роботи Heroku
+    web.run_app(app, port=os.getenv('PORT'))
