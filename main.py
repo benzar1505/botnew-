@@ -11,8 +11,12 @@ logging.basicConfig(level=logging.INFO)
 
 # Отримання токена
 API_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+HEROKU_APP_NAME = os.getenv("HEROKU_APP_NAME")
+
 if not API_TOKEN:
     raise ValueError("❌ API_TOKEN не знайдено! Додайте токен у змінні середовища.")
+if not HEROKU_APP_NAME:
+    raise ValueError("❌ HEROKU_APP_NAME не знайдено! Додайте його у змінні середовища.")
 
 # Ініціалізація бота та диспетчера
 bot = Bot(token=API_TOKEN)
@@ -28,7 +32,7 @@ main_menu = ReplyKeyboardMarkup(
 )
 
 # Команда /start
-@dp.message_handler(Command("start"))
+@dp.message(Command("start"))
 async def send_welcome(message: types.Message):
     await message.answer(
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти ідеальне авто! \n\n"
@@ -45,7 +49,7 @@ async def handle_webhook(request):
 
 # Налаштування веб-сервера
 async def on_startup(app):
-    webhook_url = f"https://{os.getenv('HEROKU_APP_NAME')}.herokuapp.com/"
+    webhook_url = f"https://{HEROKU_APP_NAME}.herokuapp.com/"
     logging.info(f"Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
