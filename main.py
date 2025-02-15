@@ -17,9 +17,11 @@ PORT = int(os.getenv("PORT", 5000))  # Heroku передає PORT як змін�
 if not API_TOKEN or not HEROKU_APP_NAME:
     raise ValueError("❌ Помилка: TELEGRAM_BOT_TOKEN або HEROKU_APP_NAME не задано!")
 
-# Ініціалізація бота та диспетчера
+# Ініціалізація бота
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)  # Передаємо bot у диспетчер
+
+# Ініціалізація диспетчера за допомогою віджетів
+dp = Dispatcher()
 
 # Клавіатура
 main_menu = ReplyKeyboardMarkup(
