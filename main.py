@@ -52,10 +52,16 @@ async def on_startup(app):
     logging.info(f"🔗 Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
+# Очищення сесій при завершенні
+async def on_cleanup(app):
+    logging.info("Закриття сесії та з'єднання...")
+    await bot.session.close()
+
 # Запуск веб-сервера
 app = web.Application()
 app.router.add_post("/", handle_webhook)
 app.on_startup.append(on_startup)
+app.on_cleanup.append(on_cleanup)
 
 if __name__ == "__main__":
     logging.info(f"🚀 Запуск сервера на порту {PORT}")
