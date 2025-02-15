@@ -19,7 +19,7 @@ if not API_TOKEN or not HEROKU_APP_NAME:
 
 # Ініціалізація бота та диспетчера
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+dp = Dispatcher(bot)  # Передаємо bot у диспетчер
 
 # Клавіатура
 main_menu = ReplyKeyboardMarkup(
