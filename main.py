@@ -3,8 +3,8 @@ import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiohttp import web, ClientSession
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
+from aiohttp import web
 
 # Логування
 logging.basicConfig(level=logging.INFO)
@@ -17,10 +17,8 @@ PORT = int(os.getenv("PORT", 5000))  # Heroku передає PORT як змін�
 if not API_TOKEN or not HEROKU_APP_NAME:
     raise ValueError("❌ Помилка: TELEGRAM_BOT_TOKEN або HEROKU_APP_NAME не задано!")
 
-# Ініціалізація бота
+# Ініціалізація бота та диспетчера
 bot = Bot(token=API_TOKEN)
-
-# Ініціалізація диспетчера
 dp = Dispatcher()
 
 # Клавіатура
@@ -39,12 +37,13 @@ async def send_welcome(message: types.Message):
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
         reply_markup=main_menu,
-        parse_mode="HTML"
+        parse_mode=ParseMode.HTML
     )
 
 # Webhook обробник
 async def handle_webhook(request):
     update = await request.json()
+    logging.info(f"Отримано оновлення: {update}")  # Логуємо отримане оновлення
     await dp.feed_update(bot, update)
     return web.Response(text="OK")
 
@@ -54,16 +53,16 @@ async def on_startup(app):
     logging.info(f"🔗 Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
-# Закриття сесії aiohttp при завершенні роботи
-async def on_cleanup(app):
+# Закриття сесії aiohttp
+async def on_shutdown(app):
     logging.info("Закриваємо сесію клієнта aiohttp")
-    await bot.session.close()  # Закриваємо сесію
+    await bot.close()
 
 # Запуск веб-сервера
 app = web.Application()
 app.router.add_post("/", handle_webhook)
 app.on_startup.append(on_startup)
-app.on_cleanup.append(on_cleanup)  # Додаємо обробник для закриття сесії
+app.on_cleanup.append(on_shutdown)
 
 if __name__ == "__main__":
     logging.info(f"🚀 Запуск сервера на порту {PORT}")
