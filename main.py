@@ -4,7 +4,7 @@ import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiohttp import web
+from aiohttp import web, ClientSession
 
 # Логування
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +20,7 @@ if not API_TOKEN or not HEROKU_APP_NAME:
 # Ініціалізація бота
 bot = Bot(token=API_TOKEN)
 
-# Ініціалізація диспетчера за допомогою віджетів
+# Ініціалізація диспетчера
 dp = Dispatcher()
 
 # Клавіатура
@@ -39,7 +39,7 @@ async def send_welcome(message: types.Message):
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
         reply_markup=main_menu,
-        parse_mode="HTML"  # Заміна на строкове значення
+        parse_mode="HTML"
     )
 
 # Webhook обробник
@@ -54,10 +54,16 @@ async def on_startup(app):
     logging.info(f"🔗 Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
+# Закриття сесії aiohttp при завершенні роботи
+async def on_cleanup(app):
+    logging.info("Закриваємо сесію клієнта aiohttp")
+    await bot.session.close()  # Закриваємо сесію
+
 # Запуск веб-сервера
 app = web.Application()
 app.router.add_post("/", handle_webhook)
 app.on_startup.append(on_startup)
+app.on_cleanup.append(on_cleanup)  # Додаємо обробник для закриття сесії
 
 if __name__ == "__main__":
     logging.info(f"🚀 Запуск сервера на порту {PORT}")
