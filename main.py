@@ -3,7 +3,7 @@ import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiohttp import web
 
 # Логування
@@ -37,7 +37,7 @@ async def send_welcome(message: types.Message):
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
         reply_markup=main_menu,
-        parse_mode=ParseMode.HTML
+        parse_mode="HTML"  # Заміна на строкове значення
     )
 
 # Webhook обробник
