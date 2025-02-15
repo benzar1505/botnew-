@@ -3,7 +3,7 @@ import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ParseMode
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiohttp import web
 
 # Логування
@@ -37,13 +37,12 @@ async def send_welcome(message: types.Message):
         "🚗 Привіт! Я бот сервісу <b>AutoScout Kyiv</b>. Я допоможу вам знайти авто! \n\n"
         "Оберіть команду в меню або напишіть 'Допомога' для перегляду всіх можливостей.",
         reply_markup=main_menu,
-        parse_mode=ParseMode.HTML
+        parse_mode=types.ParseMode.HTML
     )
 
 # Webhook обробник
 async def handle_webhook(request):
     update = await request.json()
-    logging.info(f"Отримано оновлення: {update}")  # Логуємо отримане оновлення
     await dp.feed_update(bot, update)
     return web.Response(text="OK")
 
@@ -53,16 +52,10 @@ async def on_startup(app):
     logging.info(f"🔗 Встановлення webhook: {webhook_url}")
     await bot.set_webhook(webhook_url)
 
-# Закриття сесії aiohttp
-async def on_shutdown(app):
-    logging.info("Закриваємо сесію клієнта aiohttp")
-    await bot.close()
-
 # Запуск веб-сервера
 app = web.Application()
 app.router.add_post("/", handle_webhook)
 app.on_startup.append(on_startup)
-app.on_cleanup.append(on_shutdown)
 
 if __name__ == "__main__":
     logging.info(f"🚀 Запуск сервера на порту {PORT}")
